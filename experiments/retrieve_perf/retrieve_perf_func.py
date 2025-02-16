@@ -26,6 +26,7 @@ def get_eval_template(raw_data_path:str, only_def:bool = True, save_loc:str = ''
         'R@5',                  # Recall @ 5
         'R@10',                 # Recall @ 10
         'R@50',                 # Recall @ 50
+        'RR',                   # Reciprocal Rank of the query
         'self_retrieve'         # Check whether self-retrieve 
         ])
     raw_data = json.loads(Path(raw_data_path).read_text())
@@ -126,6 +127,12 @@ def retrieval_eval(eval_df:pd.DataFrame, index:FAISS, save_loc:str = ''):
                 )
             retrieved_docs.pop(self_index)
         
+        rr = 0
+        correct_index = list(filter(lambda first_index: first_index in data[1]['ref_ids'], [doc[0].metadata['id'] for doc in retrieved_docs]))
+        if correct_index:
+            first_index = [doc[0].metadata['id'] for doc in retrieved_docs].index(correct_index[0]) + 1
+            rr = 1/first_index
+        
         for k in [3, 5, 10, 50]:
             result_dict = {doc[0].metadata['id']:doc[1] for doc in retrieved_docs[:k]}
             
@@ -143,13 +150,8 @@ def retrieval_eval(eval_df:pd.DataFrame, index:FAISS, save_loc:str = ''):
             eval_df.at[data[0], f'retrieved_{k}'] = result_dict
             eval_df.at[data[0], f'P@{k}'] = precision_K
             eval_df.at[data[0], f'R@{k}'] = recall_K
+            eval_df.at[data[0], f'RR'] = rr
             
     if save_loc: eval_df.to_csv(f'{save_loc}')
         
     return eval_df
-
-if __name__ == "__main__":
-    print(get_eval_template(
-        raw_data_path='/Users/ton_kkrongyuth/Senior Project/Aj.Pannapa/Prove_LLM/Data/NATURALPROOFS_DATASET/naturalproofs_proofwiki.json',
-        only_def=True)
-        )
