@@ -110,6 +110,8 @@ def get_index(index_loc:str, embedding_model:HuggingFaceEmbeddings):
     return refs_db
 
 def retrieval_eval(eval_df:pd.DataFrame, index:FAISS, save_loc:str = ''):
+    eval_df = eval_df.loc[int(0.8*len(eval_df)):, :]
+    
     for _, data in enumerate(eval_df.iterrows()):
         theorem_query = data[1]['theorem_contents']
         actual_refs = set(data[1]['ref_ids'])
